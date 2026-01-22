@@ -13,20 +13,29 @@ class ApiTaskController extends Controller
 {
     public function index()
     {
-        return response()->json(Auth::user()->tasks()->latest()->get());
+        $tasks = auth()->user()->tasks()
+            ->with(['category', 'tags']) // اجلب التصنيف والوسوم مع كل مهمة
+            ->latest()
+            ->get();
+
+        return response()->json($tasks);
     }
 
     public function store(StoreTaskRequest $request)
     {
-        // بمجرد وصولنا هنا، فإن البيانات مفحوصة وسليمة 100%
-        
-        // استخدام $request->validated() لجلب البيانات التي نجحت في الفحص فقط
-        $task = Auth::user()->tasks()->create($request->validated());
+        // 1. إنشاء المهمة
+        $task = auth()->user()->tasks()->create($request->validated());
+
+        // 2. ربط الوسوم (Pivot Table)
+        if ($request->has('tags')) {
+            // دالة sync هي الأفضل: تقوم بمزامنة الـ IDs في جدول الوصل تلقائياً
+            $task->tags()->sync($request->tags);
+        }
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Task created successfully',
-            'data' => $task
+            'message' => 'Task created with tags!',
+            // نستخدم load('tags') لكي تظهر الوسوم في الرد فوراً
+            'data' => $task->load('tags')
         ], 201);
     }
 
@@ -37,14 +46,14 @@ class ApiTaskController extends Controller
     }
 
     public function update(UpdateTaskRequest $request, Task $task)
-{
-    $task->update($request->validated());
+    {
+        $task->update($request->validated());
 
-    return response()->json([
-        'message' => 'تم التعديل بنجاح',
-        'task' => $task
-    ]);
-}
+        return response()->json([
+            'message' => 'تم التعديل بنجاح',
+            'task' => $task
+        ]);
+    }
 
     public function destroy(Task $task)
     {
@@ -60,7 +69,4 @@ class ApiTaskController extends Controller
         $task->save();
         return response()->json($task);
     }
-
-    
-
 }

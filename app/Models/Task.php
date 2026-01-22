@@ -7,11 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 class Task extends Model
 {
     // السماح بإضافة هذه الحقول عبر الـ Form
-    protected $fillable = ['title', 'description', 'is_completed', 'user_id'];
+    protected $fillable = ['title', 'description', 'is_completed', 'user_id', 'category_id'];
 
     // كل مهمة مرتبطة بمستخدم واحد فقط
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function category()
+    {
+        // المهمة تنتمي لتصنيف واحد
+        return $this->belongsTo(Category::class);
+    }
+
+    public function tags()
+    {
+        // المهمة تنتمي لعدة وسوم
+        return $this->belongsToMany(Tag::class);
     }
 }

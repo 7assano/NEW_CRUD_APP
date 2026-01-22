@@ -6,34 +6,35 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreTaskRequest extends FormRequest
 {
-    /**
-     * تحديد ما إذا كان المستخدم مصرحاً له بالقيام بهذا الطلب.
-     */
     public function authorize(): bool
     {
-        // نغيرها لـ true لأننا نعتمد على Middleware 'auth:sanctum' في الروابط أصلاً
         return true;
     }
 
-    /**
-     * الحصول على قواعد التحقق (Validation Rules) التي تنطبق على الطلب.
-     */
     public function rules(): array
-{
-    // إذا كانت البيانات مصفوفة
-    if (is_array($this->all()) && isset($this->all()[0])) {
-        return [
-            '*.title' => 'required|string|min:3|max:20|unique:tasks,title',
-            '*.description' => 'nullable|string|max:100',
-            '*.is_completed' => 'boolean',
-        ];
-    }
+    {
+        // 1. القواعد الأساسية المشتركة (لتجنب التكرار)
+        $rules = [
+            'title' => 'required|string|min:3|max:20|unique:tasks,title',
+            'description' => 'nullable|string|max:100',
+            'is_completed' => 'boolean',
+            // الإضافة الجديدة هنا: التأكد أن التصنيف موجود
+            'category_id' => 'nullable|exists:categories,id',
 
-    // إذا كانت البيانات كائن واحد
-    return [
-        'title' => 'required|string|min:3|max:20|unique:tasks,title',
-        'description' => 'nullable|string|max:100',
-        'is_completed' => 'boolean',
-    ];
+            'tags' => 'nullable|array', // يجب أن تكون مصفوفة
+            'tags.*' => 'exists:tags,id', // كل عنصر في المصفوفة يجب أن يكون ID موجود في جدول الـ tags
+        ];
+
+        // 2. إذا كانت البيانات مصفوفة (إضافة مهام جماعية)
+        if (is_array($this->all()) && isset($this->all()[0])) {
+            $arrayRules = [];
+            foreach ($rules as $key => $value) {
+                $arrayRules["*.$key"] = $value;
+            }
+            return $arrayRules;
+        }
+
+        // 3. إذا كانت البيانات كائن واحد
+        return $rules;
+    }
 }
-} 
