@@ -8,15 +8,28 @@
             <p class="text-slate-400">You currently have {{ $tasks->count() }} tasks.</p>
         </div>
 
-        <div class="flex gap-2 text-xs font-semibold uppercase tracking-wider">
-            <span class="bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full border border-blue-800">
-                Pending: {{ $tasks->where('is_completed', false)->count() }}
-            </span>
-            <span class="bg-emerald-900/30 text-emerald-400 px-3 py-1 rounded-full border border-emerald-800">
-                Completed: {{ $tasks->where('is_completed', true)->count() }}
-            </span>
+        <div class="flex flex-col md:flex-row items-start md:items-center gap-3">
+            {{-- Statistics --}}
+            <div class="flex gap-2 text-xs font-semibold uppercase tracking-wider">
+                <span class="bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full border border-blue-800">
+                    Pending: {{ $tasks->where('is_completed', false)->count() }}
+                </span>
+                <span class="bg-emerald-900/30 text-emerald-400 px-3 py-1 rounded-full border border-emerald-800">
+                    Completed: {{ $tasks->where('is_completed', true)->count() }}
+                </span>
+            </div>
+
+            {{-- New Task Button --}}
+            <a href="{{ route('tasks.create') }}" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition flex items-center gap-2 shadow-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                New Task
+            </a>
         </div>
     </div>
+
+
 
     {{-- Search & Filter Bar --}}
     <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg">
