@@ -2,20 +2,24 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory; // 👈 تأكد
 use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
-    public function tasks()
-    {
-        // التصنيف لديه مهام كثيرة
-        return $this->hasMany(Task::class);
-    }
+    use HasFactory; // 👈 تأكد
 
+    protected $fillable = ['name', 'user_id'];
+
+    // العلاقة: التصنيف ينتمي لمستخدم
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    protected $fillable = ['name', 'user_id'];
+    // العلاقة: التصنيف يحتوي على مهام كثيرة
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
+    }
 }

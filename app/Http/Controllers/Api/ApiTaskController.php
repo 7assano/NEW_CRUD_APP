@@ -3,70 +3,236 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\StoreTaskRequest;
 use App\Models\Task;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Requests\Api\UpdateTaskRequest;
+use App\Http\Resources\TaskResource;
+use App\Services\TaskFilterService;
+
 
 class ApiTaskController extends Controller
 {
-    public function index()
+    // عرض كل المهام مع الفلترة والترتيب
+    public function index(Request $request)
     {
-        $tasks = auth()->user()->tasks()
-            ->with(['category', 'tags']) // اجلب التصنيف والوسوم مع كل مهمة
-            ->latest()
-            ->get();
+        $query = auth()->user()->tasks()
+            ->with(['category', 'tags', 'user']);
 
-        return response()->json($tasks);
-    }
-
-    public function store(StoreTaskRequest $request)
-    {
-        // 1. إنشاء المهمة
-        $task = auth()->user()->tasks()->create($request->validated());
-
-        // 2. ربط الوسوم (Pivot Table)
-        if ($request->has('tags')) {
-            // دالة sync هي الأفضل: تقوم بمزامنة الـ IDs في جدول الوصل تلقائياً
-            $task->tags()->sync($request->tags);
+        // 🔍 فلترة حسب الأولوية
+        if ($request->has('priority')) {
+            $query->priority($request->priority);
         }
 
-        return response()->json([
-            'message' => 'Task created with tags!',
-            // نستخدم load('tags') لكي تظهر الوسوم في الرد فوراً
-            'data' => $task->load('tags')
-        ], 201);
+        // ⭐ فلترة المفضلة فقط
+        if ($request->boolean('favorites')) {
+            $query->favorites();
+        }
+
+        // ✅ فلترة حسب الحالة
+        if ($request->has('completed')) {
+            if ($request->boolean('completed')) {
+                $query->completed();
+            } else {
+                $query->pending();
+            }
+        }
+
+        // 🏷️ فلترة حسب الـ Category
+        if ($request->has('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // 🏷️ فلترة حسب الـ Tag
+        if ($request->has('tag_id')) {
+            $query->whereHas('tags', function ($q) use ($request) {
+                $q->where('tags.id', $request->tag_id);
+            });
+        }
+
+        // 🔎 البحث في العنوان والوصف
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // 📊 الترتيب
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        // ترتيب خاص للأولوية
+        if ($sortBy === 'priority') {
+            $query->orderByRaw("
+            CASE priority 
+                WHEN 'high' THEN 1 
+                WHEN 'medium' THEN 2 
+                WHEN 'low' THEN 3 
+            END
+        ");
+        } else {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $tasks = $query->paginate(15); // 👈 تغيير من get() إلى paginate()
+
+        return TaskResource::collection($tasks);
     }
 
+    // عرض مهمة واحدة
     public function show(Task $task)
     {
-        if ($task->user_id !== Auth::id()) return response()->json(['message' => 'Unauthorized'], 403);
-        return response()->json($task);
+        if ($task->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $task->load(['category', 'tags', 'user']);
+
+        return new TaskResource($task);
     }
 
-    public function update(UpdateTaskRequest $request, Task $task)
+    // إنشاء مهمة
+    public function store(Request $request)
     {
-        $task->update($request->validated());
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'category_id' => 'nullable|exists:categories,id',
+            'priority' => 'nullable|in:low,medium,high',      // 👈 جديد
+            'is_favorite' => 'nullable|boolean',              // 👈 جديد
+        ]);
+
+        $task = auth()->user()->tasks()->create($request->all());
+        $task->load(['category', 'tags', 'user']);
+
+        return new TaskResource($task);
+    }
+
+    // تحديث مهمة
+    public function update(Request $request, Task $task)
+    {
+        if ($task->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'nullable|string',
+            'category_id' => 'nullable|exists:categories,id',
+            'priority' => 'nullable|in:low,medium,high',      // 👈 جديد
+            'is_favorite' => 'nullable|boolean',              // 👈 جديد
+        ]);
+
+        $task->update($request->all());
+        $task->load(['category', 'tags', 'user']);
+
+        return new TaskResource($task);
+    }
+
+    // حذف مهمة
+    public function destroy(Task $task)
+    {
+        if ($task->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $task->delete();
 
         return response()->json([
-            'message' => 'تم التعديل بنجاح',
-            'task' => $task
+            'success' => true,
+            'message' => 'Task deleted successfully'
         ]);
     }
 
-    public function destroy(Task $task)
-    {
-        if ($task->user_id !== Auth::id()) return response()->json(['message' => 'Unauthorized'], 403);
-        $task->delete();
-        return response()->json(['message' => 'Task deleted']);
-    }
-
+    // Toggle الحالة
     public function toggle(Task $task)
     {
-        if ($task->user_id !== Auth::id()) return response()->json(['message' => 'Unauthorized'], 403);
+        if ($task->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $task->is_completed = !$task->is_completed;
         $task->save();
-        return response()->json($task);
+        $task->load(['category', 'tags', 'user']);
+
+        return new TaskResource($task);
+    }
+
+    // 👇 دالة جديدة: Toggle المفضلة
+    public function toggleFavorite(Task $task)
+    {
+        if ($task->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $task->is_favorite = !$task->is_favorite;
+        $task->save();
+        $task->load(['category', 'tags', 'user']);
+
+        return new TaskResource($task);
+    }
+
+    /**
+     * عرض المهام المحذوفة (Trash)
+     */
+    public function trash(Request $request)
+    {
+        $query = auth()->user()->tasks()
+            ->onlyTrashed() // فقط المهام المحذوفة
+            ->with(['category', 'tags']);
+
+        $tasks = $query->paginate(15);
+
+        return TaskResource::collection($tasks);
+    }
+
+    /**
+     * استرجاع مهمة محذوفة
+     */
+    public function restore($id)
+    {
+        $task = auth()->user()->tasks()
+            ->onlyTrashed()
+            ->findOrFail($id);
+
+        $task->restore();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم استرجاع المهمة بنجاح',
+            'data' => new TaskResource($task),
+        ]);
+    }
+
+    /**
+     * حذف نهائي (Force Delete)
+     */
+    public function forceDelete($id)
+    {
+        $task = auth()->user()->tasks()
+            ->onlyTrashed()
+            ->findOrFail($id);
+
+        $task->forceDelete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم حذف المهمة نهائياً',
+        ]);
+    }
+
+    /**
+     * تفريغ سلة المهملات (حذف كل المهام المحذوفة)
+     */
+    public function emptyTrash()
+    {
+        $deletedCount = auth()->user()->tasks()
+            ->onlyTrashed()
+            ->forceDelete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "تم حذف {$deletedCount} مهمة نهائياً",
+        ]);
     }
 }

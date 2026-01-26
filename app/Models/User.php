@@ -7,9 +7,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-/**
- * @method \Illuminate\Database\Eloquent\Relations\HasMany tasks()
- */
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
@@ -18,6 +15,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'avatar',
+        'role',  // 👈 جديد
     ];
 
     protected $hidden = [
@@ -25,19 +24,23 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
 
-    /**
-     * Get all tasks for the user.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
+    // العلاقات
     public function tasks()
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function categories()
+    {
+        return $this->hasMany(Category::class);
     }
 
     public function profile()
@@ -45,8 +48,14 @@ class User extends Authenticatable
         return $this->hasOne(Profile::class);
     }
 
-    public function categories()
+    // 👇 دالة مساعدة للحصول على رابط الصورة الكامل
+    public function getAvatarUrlAttribute()
     {
-        return $this->hasMany(Category::class);
+        if ($this->avatar) {
+            return asset('storage/' . $this->avatar);
+        }
+
+        // صورة افتراضية إذا لم يكن هناك صورة
+        return asset('images/default-avatar.png');
     }
 }

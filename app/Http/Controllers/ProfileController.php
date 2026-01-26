@@ -8,11 +8,10 @@ use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
-    // عرض معلوم��ت المستخدم
+    // عرض معلومات المستخدم
     public function show()
     {
         $user = auth()->user();
-        $user->load('profile');
 
         return new UserResource($user);
     }
@@ -38,11 +37,11 @@ class ProfileController extends Controller
         return new UserResource($user);
     }
 
-    // 👇 دالة جديدة: رفع صورة البروفايل
+    // رفع صورة البروفايل
     public function uploadAvatar(Request $request)
     {
         $request->validate([
-            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // حجم أقصى 2MB
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $user = auth()->user();
@@ -61,7 +60,7 @@ class ProfileController extends Controller
         return new UserResource($user);
     }
 
-    // 👇 دالة جديدة: حذف صورة البروفايل
+    // حذف صورة البروفايل
     public function deleteAvatar()
     {
         $user = auth()->user();
