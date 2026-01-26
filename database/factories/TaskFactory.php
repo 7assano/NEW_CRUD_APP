@@ -2,25 +2,22 @@
 
 namespace Database\Factories;
 
-use App\Models\Task;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\User;
+use App\Models\Category;
 
 class TaskFactory extends Factory
 {
-    protected $model = Task::class;
-
     public function definition(): array
     {
         return [
-            'title' => fake()->sentence(3),
-            'description' => fake()->boolean(70)
-                ? fake()->paragraph()
-                : null,
-            'is_completed' => fake()->boolean(30),
-
-            // 👇 الحقول الجديدة
+            'title' => fake()->sentence(4),
+            'description' => fake()->paragraph(2),
             'priority' => fake()->randomElement(['low', 'medium', 'high']),
-            'is_favorite' => fake()->boolean(20), // 20% احتمال أن تكون مفضلة
+            'is_completed' => fake()->boolean(30),
+            'is_favorite' => fake()->boolean(20),
+            'user_id' => User::inRandomOrder()->first()?->id ?? 1,
+            'category_id' => Category::inRandomOrder()->first()?->id ?? null,
         ];
     }
 }

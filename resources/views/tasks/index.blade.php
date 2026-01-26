@@ -4,7 +4,7 @@
 <div class="space-y-6">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-slate-100"> Welcome to your to-do list </h1>
+            <h1 class="text-2xl font-bold text-slate-100">Welcome to your to-do list</h1>
             <p class="text-slate-400">You currently have {{ $tasks->count() }} tasks.</p>
         </div>
 
@@ -18,8 +18,10 @@
         </div>
     </div>
 
+    {{-- Search & Filter Bar --}}
     <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg">
-        <form action="{{ route('tasks.index') }}" method="GET" class="flex flex-col md:flex-row gap-3">
+        <form action="{{ route('tasks.index') }}" method="GET" class="flex flex-col gap-3">
+            {{-- Search Input --}}
             <div class="relative flex-1">
                 <input type="text" name="search" value="{{ request('search') }}"
                     placeholder="Search for a task..."
@@ -31,80 +33,165 @@
                 </div>
             </div>
 
-            <div class="flex gap-2">
-                <select name="filter" onchange="this.form.submit()" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-300 outline-none">
-                    <option value="">All tasks</option>
+            {{-- Filters Row --}}
+            <div class="flex flex-wrap gap-2">
+                {{-- Status Filter --}}
+                <select name="filter" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-300 outline-none">
+                    <option value="">All Status</option>
                     <option value="pending" {{ request('filter') == 'pending' ? 'selected' : '' }}>Pending</option>
                     <option value="completed" {{ request('filter') == 'completed' ? 'selected' : '' }}>Completed</option>
                 </select>
-                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition font-bold">Search</button>
-                <a href="{{ route('tasks.index') }}" class="bg-slate-700 text-slate-300 px-4 py-2 rounded-xl hover:bg-slate-600 transition text-center flex items-center">Reset</a>
+
+                {{-- Priority Filter --}}
+                <select name="priority" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-300 outline-none">
+                    <option value="">All Priorities</option>
+                    <option value="low" {{ request('priority') == 'low' ? 'selected' : '' }}>Low</option>
+                    <option value="medium" {{ request('priority') == 'medium' ? 'selected' : '' }}>Medium</option>
+                    <option value="high" {{ request('priority') == 'high' ? 'selected' : '' }}>High</option>
+                </select>
+
+                {{-- Category Filter --}}
+                <select name="category" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-300 outline-none">
+                    <option value="">All Categories</option>
+                    @foreach($categories as $category)
+                    <option value="{{ $category->id }}" {{ request('category') == $category->id ? 'selected' : '' }}>
+                        {{ $category->name }}
+                    </option>
+                    @endforeach
+                </select>
+
+                {{-- Favorite Filter --}}
+                <label class="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-300 cursor-pointer">
+                    <input type="checkbox" name="favorite" value="1" {{ request('favorite') == '1' ? 'checked' : '' }}
+                        class="rounded bg-slate-800 border-slate-600 text-yellow-500 focus:ring-yellow-500">
+                    <span>⭐ Favorites</span>
+                </label>
+
+                {{-- Buttons --}}
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition font-bold">
+                    Search
+                </button>
+                <a href="{{ route('tasks.index') }}" class="bg-slate-700 text-slate-300 px-4 py-2 rounded-xl hover:bg-slate-600 transition text-center flex items-center">
+                    Reset
+                </a>
             </div>
         </form>
     </div>
 
+    {{-- Success Message --}}
     @if(session('success'))
     <div class="bg-emerald-900/20 border border-emerald-800/50 text-emerald-400 px-4 py-3 rounded-xl flex items-center gap-3">
         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path>
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
         </svg>
-        {{ session('success') }}
+        <span>{{ session('success') }}</span>
     </div>
     @endif
 
+    {{-- Tasks List --}}
+    @if($tasks->isEmpty())
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-12 text-center">
+        <div class="text-slate-500 mb-4">
+            <svg class="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-slate-300 mb-2">No tasks found</h3>
+        <p class="text-slate-500 mb-6">Start by creating your first task!</p>
+        <a href="{{ route('tasks.create') }}" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Create Task
+        </a>
+    </div>
+    @else
     <div class="grid gap-4">
-        @forelse($tasks as $task)
-        <div class="group bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow-sm hover:border-blue-500/50 transition-all duration-300">
-            <div class="flex items-start justify-between">
-                <div class="flex gap-4">
-                    <form action="{{ route('tasks.toggle', $task->id) }}" method="POST">
-                        @csrf @method('PATCH')
-                        <button type="submit" class="focus:outline-none block mt-1">
-                            @if($task->is_completed)
-                            <div class="w-6 h-6 rounded-full bg-emerald-900/40 flex items-center justify-center text-emerald-500 border border-emerald-800">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                            </div>
-                            @else
-                            <div class="w-6 h-6 rounded-full border-2 border-slate-600 transition hover:border-blue-500 shadow-inner"></div>
-                            @endif
-                        </button>
-                    </form>
+        @foreach($tasks as $task)
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 hover:border-slate-600 transition-all group">
+            <div class="flex items-start gap-4">
+                {{-- Checkbox --}}
+                <form action="{{ route('tasks.toggle', $task) }}" method="POST">
+                    @csrf
+                    @method('PATCH')
+                    <button type="submit" class="mt-1">
+                        @if($task->is_completed)
+                        <svg class="w-6 h-6 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        @else
+                        <div class="w-6 h-6 border-2 border-slate-600 rounded-full hover:border-blue-500 transition"></div>
+                        @endif
+                    </button>
+                </form>
 
-                    <div>
-                        <h3 class="font-bold text-lg leading-tight {{ $task->is_completed ? 'text-slate-500 line-through' : 'text-slate-100' }}">
+                {{-- Task Image --}}
+                @if($task->image)
+                <img src="{{ asset('storage/' . $task->image) }}" alt="Task" class="w-16 h-16 rounded-lg object-cover">
+                @endif
+
+                {{-- Task Content --}}
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between gap-3 mb-2">
+                        <h3 class="text-lg font-semibold text-slate-100 {{ $task->is_completed ? 'line-through opacity-50' : '' }}">
                             {{ $task->title }}
                         </h3>
-                        @if($task->description)
-                        <p class="text-slate-400 text-sm mt-1">{{ $task->description }}</p>
+
+                        {{-- Favorite Button --}}
+                        <form action="{{ route('tasks.favorite', $task) }}" method="POST">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="text-2xl hover:scale-110 transition">
+                                {{ $task->is_favorite ? '⭐' : '☆' }}
+                            </button>
+                        </form>
+                    </div>
+
+                    @if($task->description)
+                    <p class="text-slate-400 text-sm mb-3 {{ $task->is_completed ? 'line-through opacity-50' : '' }}">
+                        {{ $task->description }}
+                    </p>
+                    @endif
+
+                    {{-- Tags --}}
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        {{-- Priority Badge --}}
+                        @if($task->priority == 'high')
+                        <span class="bg-red-900/30 text-red-400 text-xs px-2 py-1 rounded-full border border-red-800">🔴 High</span>
+                        @elseif($task->priority == 'medium')
+                        <span class="bg-yellow-900/30 text-yellow-400 text-xs px-2 py-1 rounded-full border border-yellow-800">🟡 Medium</span>
+                        @else
+                        <span class="bg-green-900/30 text-green-400 text-xs px-2 py-1 rounded-full border border-green-800">🟢 Low</span>
+                        @endif
+
+                        {{-- Category Badge --}}
+                        @if($task->category)
+                        <span class="bg-purple-900/30 text-purple-400 text-xs px-2 py-1 rounded-full border border-purple-800">
+                            📁 {{ $task->category->name }}
+                        </span>
                         @endif
                     </div>
-                </div>
 
-                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <a href="{{ route('tasks.edit', $task->id) }}" class="p-2 text-slate-500 hover:text-blue-400 hover:bg-slate-700 rounded-lg transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                    </a>
-                    <form action="{{ route('tasks.destroy', $task->id) }}" method="POST" onsubmit="return confirm('هل أنت متأكد؟')">
-                        @csrf @method('DELETE')
-                        <button class="p-2 text-slate-500 hover:text-red-400 hover:bg-slate-700 rounded-lg transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                        </button>
-                    </form>
+                    {{-- Actions --}}
+                    <div class="flex items-center gap-2 text-sm">
+                        <a href="{{ route('tasks.edit', $task) }}" class="text-blue-400 hover:text-blue-300 font-medium">
+                            ✏️ Edit
+                        </a>
+                        <span class="text-slate-600">•</span>
+                        <form action="{{ route('tasks.destroy', $task) }}" method="POST" class="inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" onclick="return confirm('Move to trash?')" class="text-red-400 hover:text-red-300 font-medium">
+                                🗑️ Delete
+                            </button>
+                        </form>
+                        <span class="text-slate-600 ml-auto">{{ $task->created_at->diffForHumans() }}</span>
+                    </div>
                 </div>
             </div>
         </div>
-        @empty
-        <div class="bg-slate-800 border-2 border-dashed border-slate-700 rounded-3xl p-12 text-center">
-            <h2 class="text-xl font-bold text-slate-400">The task list is empty</h2>
-            <a href="{{ route('tasks.create') }}" class="mt-6 inline-block bg-blue-600 text-white px-8 py-3 rounded-full font-bold">Add your first task</a>
-        </div>
-        @endforelse
+        @endforeach
     </div>
+    @endif
 </div>
 @endsection

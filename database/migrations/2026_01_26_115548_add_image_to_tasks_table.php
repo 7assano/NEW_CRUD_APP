@@ -9,8 +9,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('tasks', function (Blueprint $table) {
-            $table->string('priority')->default('medium')->after('description');
-            $table->boolean('is_favorite')->default(false)->after('is_completed');
             $table->string('image')->nullable()->after('category_id');
         });
     }
@@ -18,7 +16,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('tasks', function (Blueprint $table) {
-            $table->dropColumn(['priority', 'is_favorite', 'image']);
+            $table->dropColumn('image');
         });
     }
 };
