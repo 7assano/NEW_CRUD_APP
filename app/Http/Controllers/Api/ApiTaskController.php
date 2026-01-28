@@ -19,19 +19,19 @@ class ApiTaskController extends Controller
 
         // 🔍 فلترة حسب الأولوية
         if ($request->has('priority')) {
-            $query->priority($request->priority);
+            $query->where('priority', $request->priority);
         }
 
         // ⭐ فلترة المفضلة فقط
         if ($request->boolean('favorites')) {
-            $query->favorites();
+            $query->where('is_favorite', true);
         }
 
         // ✅ فلترة حسب الحالة
         if ($request->has('completed')) {
-            if ($request->boolean('completed')) {
-                $query->completed();
-            } else {
+            if ($request->has('completed')) {
+    $query->where('is_completed', $request->boolean('completed'));
+} else {
                 $query->pending();
             }
         }
