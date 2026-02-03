@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Routing\Controller;
 
 class ProfileController extends Controller
 {
@@ -76,4 +77,17 @@ class ProfileController extends Controller
             'message' => 'Avatar deleted successfully'
         ]);
     }
+
+    public function update(Request $request)
+{
+    // كود التحديث الخاص بك هنا...
+    
+    $user = $request->user();
+    $user->load('profile'); // 👈 هذه الخطوة السحرية لجلب البيانات الجديدة
+
+    return new UserResource($user);
 }
+    
+}
+
+

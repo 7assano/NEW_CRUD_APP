@@ -7,7 +7,7 @@ use App\Models\Task;
 use Illuminate\Http\Request;
 use App\Http\Resources\TaskResource;
 use App\Services\TaskFilterService;
-
+use Illuminate\Support\Facades\Http;
 
 class ApiTaskController extends Controller
 {
@@ -235,4 +235,24 @@ class ApiTaskController extends Controller
             'message' => "تم حذف {$deletedCount} مهمة نهائياً",
         ]);
     }
+
+
+
+public function testApiCall()
+{
+    $token = "4|vBTgp5JmvYTsDov5GhUzKISgAPq72fNwSn6YFsUI92222d2d";
+    
+    $response = Http::withToken($token)
+        ->withHeaders([
+            'Accept' => 'application/json',
+        ])
+        ->post('http://127.0.0.1:8000/api/v1/tasks', [
+            'title' => 'مهمة تدريبية جديدة',
+            'description' => 'تم إنشاؤها باستخدام Laravel HTTP Client محاكاة لـ cURL',
+            'priority' => 'high',
+        ]);
+
+    return $response->json();
+}
+
 }

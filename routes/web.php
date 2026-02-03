@@ -5,6 +5,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\TrashController;
+use App\Http\Controllers\ProfileController;
 
 // الصفحات العامة بدون حماية
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
@@ -16,6 +17,10 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth')->group(function () {
     // Tasks CRUD
     Route::resource('tasks', TaskController::class);
+
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::post('/profile', [ProfileController::class, 'store'])->name('profile.store');
+    Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar'])->name('profile.avatar.upload');
 
     // Task Actions
     Route::patch('tasks/{task}/toggle', [TaskController::class, 'toggle'])->name('tasks.toggle');

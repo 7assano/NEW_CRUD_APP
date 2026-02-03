@@ -1,9 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\ApiAuthController;
+use App\Http\Controllers\Api\ApiAuthController;  
 use App\Http\Controllers\Api\ApiTaskController;
 use App\Http\Controllers\Api\AdminTaskController;
 
@@ -25,10 +24,10 @@ Route::prefix('v1')->as('api.')->group(function () {
         Route::patch('/tasks/{task}/favorite', [ApiTaskController::class, 'toggleFavorite'])->name('tasks.favorite');
 
         // Profile
-        Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show']);
-        Route::post('/profile', [App\Http\Controllers\ProfileController::class, 'store']);
-        Route::post('/profile/avatar', [App\Http\Controllers\ProfileController::class, 'uploadAvatar'])->name('profile.avatar.upload');
-        Route::delete('/profile/avatar', [App\Http\Controllers\ProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
+        Route::get('/profile', [App\Http\Controllers\Api\ProfileController::class, 'show']);
+        Route::post('/profile', [App\Http\Controllers\Api\ProfileController::class, 'store']);
+        Route::post('/profile/avatar', [App\Http\Controllers\Api\ProfileController::class, 'uploadAvatar'])->name('profile.avatar.upload');
+        Route::delete('/profile/avatar', [App\Http\Controllers\Api\ProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
 
         // Categories
         Route::get('/categories', [CategoryController::class, 'index']);

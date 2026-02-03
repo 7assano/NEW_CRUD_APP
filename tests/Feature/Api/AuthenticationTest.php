@@ -5,6 +5,9 @@ namespace Tests\Feature\Api;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+
 
 class AuthenticationTest extends TestCase
 {
@@ -84,5 +87,25 @@ class AuthenticationTest extends TestCase
             ->assertJson([
                 'message' => 'بيانات الدخول غير صحيحة',
             ]);
+    }
+
+    public function test_user_can_upload_avatar_via_api()
+    {
+        // 1. تجهيز بيئة الاختبار (وهمي)
+        Storage::fake('public'); // محاكاة وحدة التخزين لعدم ملء جهازك بصور حقيقية
+        $user = User::factory()->create();
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        // 2. تنفيذ الطلب (هذا هو الكود الذي سألت عنه)
+        $response = $this->withToken($token)
+            ->postJson('/api/v1/profile/avatar', [
+                'avatar' => UploadedFile::fake()->image('avatar.jpg')
+            ]);
+
+        // 3. التأكد من النتيجة (Assertions)
+        $response->assertStatus(200); // التأكد أن السيرفر رد بنجاح
+        $this->assertNotNull($user->fresh()->avatar); // التأكد أن قاعدة البيانات تحدثت
+        $avatarPath = $user->fresh()->avatar;
+        $this->assertTrue(Storage::disk('public')->exists($avatarPath));
     }
 }

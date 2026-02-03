@@ -5,16 +5,22 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
 {
     // عرض معلومات المستخدم
     public function show()
-    {
-        $user = auth()->user();
-
-        return new UserResource($user);
+{
+    // الحصول على المستخدم الحالي مع بيانات ملفه الشخصي المرتبطة به
+    $user = Auth::user();
+    if ($user instanceof \Illuminate\Database\Eloquent\Model) {
+        $user->load('profile');
     }
+
+    // إرجاع ملف العرض وتمرير بيانات المستخدم له
+    return view('profile.show', compact('user'));
+}
 
     // تحديث البروفايل
     public function store(Request $request)
@@ -25,7 +31,7 @@ class ProfileController extends Controller
             'address' => 'nullable|string|max:255',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         $user->profile()->updateOrCreate(
             ['user_id' => $user->id],
@@ -34,7 +40,7 @@ class ProfileController extends Controller
 
         $user->load('profile');
 
-        return new UserResource($user);
+        return back()->with('success', 'تم تحديث بيانات ملفك الشخصي بنجاح!');
     }
 
     // رفع صورة البروفايل
@@ -44,7 +50,7 @@ class ProfileController extends Controller
             'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         // حذف الصورة القديمة إذا كانت موجودة
         if ($user->avatar) {
@@ -63,7 +69,7 @@ class ProfileController extends Controller
     // حذف صورة البروفايل
     public function deleteAvatar()
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if ($user->avatar) {
             Storage::disk('public')->delete($user->avatar);

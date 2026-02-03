@@ -13,6 +13,8 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'bio'   => $this->profile->bio ?? null,   // جلب الـ bio من العلاقة
+            'phone' => $this->profile->phone ?? null, // جلب الـ phone من العلاقة
             'avatar' => $this->avatar,
             'avatar_url' => $this->avatar_url,
             'created_at' => $this->created_at->format('Y-m-d H:i'),
